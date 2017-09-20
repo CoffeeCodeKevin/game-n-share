@@ -3,6 +3,7 @@ const express = require('express');
 const routes = require('./routes');
 const pg = require('pg');
 const format = require('pg-format');
+const crypto = require('crypto');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({dev: process.env.NODE_ENV !== 'production'});
@@ -43,3 +44,26 @@ app.prepare().then(() => {
     currentClient = client;
   });
 });
+
+// Found here: https://ciphertrick.com/2016/01/18/salt-hash-passwords-using-nodejs-crypto/.
+// Even for a small practice app like this, I would prefer to use best practices
+// for the storage of user passwords.
+
+const genRandomString = function(length){
+    return crypto.randomBytes(Math.ceil(length/2)).toString('hex').slice(0,length);
+};
+
+const sha512 = function(password, salt){
+    const hash = crypto.createHmac('sha512', salt);
+    hash.update(password);
+    const value = hash.digest('hex');
+    return {
+        salt:salt,
+        passwordHash:value
+    };
+};
+
+function saltHashPassword(userpassword) {
+    const salt = genRandomString(16);
+    const passwordData = sha512(userpassword, salt);
+}
